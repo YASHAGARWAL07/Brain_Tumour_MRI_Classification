@@ -1,0 +1,1716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NeuroAI — Clinical MRI Intelligence Platform</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
+  <style>
+    /* ===== DESIGN TOKENS ===== */
+    :root {
+      --teal:        #0f766e;
+      --teal-lt:     #14b8a6;
+      --teal-glow:   rgba(20,184,166,0.15);
+      --red-risk:    #dc2626;
+      --amber-warn:  #d97706;
+      --green-safe:  #059669;
+      --bg:          #0b1120;
+      --surface:     #111827;
+      --surface2:    #1c2a3a;
+      --border:      rgba(255,255,255,0.07);
+      --text:        #e2e8f0;
+      --muted:       #6b7280;
+      --white:       #ffffff;
+      --mono:        'DM Mono', monospace;
+      --sans:        'DM Sans', sans-serif;
+      --serif:       'Playfair Display', serif;
+      --radius:      14px;
+      --radius-sm:   8px;
+      --shadow:      0 4px 24px rgba(0,0,0,0.4);
+      --shadow-glow: 0 0 40px rgba(20,184,166,0.12);
+    }
+    [data-theme="light"] {
+      --bg:       #f0f4f8;
+      --surface:  #ffffff;
+      --surface2: #e8f0fe;
+      --border:   rgba(0,0,0,0.08);
+      --text:     #0f172a;
+      --muted:    #64748b;
+      --shadow:   0 4px 24px rgba(0,0,0,0.08);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.65;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    /* ===== TOPBAR ===== */
+    .topbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      backdrop-filter: blur(12px);
+    }
+    .topbar-inner {
+      max-width: 1380px; margin: 0 auto; padding: 0 24px;
+      display: flex; align-items: center; justify-content: space-between; height: 60px; gap: 16px;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .brand-mark {
+      width: 34px; height: 34px;
+      background: linear-gradient(135deg, var(--teal), var(--teal-lt));
+      border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;
+    }
+    .brand-name { font-size: 1.15rem; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
+    .brand-tag {
+      font-size: 0.68rem; font-family: var(--mono); color: var(--teal-lt);
+      background: var(--teal-glow); padding: 2px 8px; border-radius: 4px;
+      border: 1px solid rgba(20,184,166,0.3); text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .topbar-actions { display: flex; gap: 8px; align-items: center; }
+    .icon-btn {
+      width: 36px; height: 36px; border: 1px solid var(--border); background: var(--surface2);
+      border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 16px; transition: all 0.2s; color: var(--text);
+    }
+    .icon-btn:hover { background: var(--teal-glow); border-color: var(--teal-lt); }
+
+    /* ===== HERO ===== */
+    .hero-strip {
+      background: linear-gradient(90deg, var(--surface) 0%, var(--surface2) 100%);
+      border-bottom: 1px solid var(--border); padding: 22px 0;
+    }
+    .hero-inner {
+      max-width: 1380px; margin: 0 auto; padding: 0 24px;
+      display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap;
+    }
+    .hero-copy h1 {
+      font-family: var(--serif); font-size: clamp(1.4rem, 2.5vw, 1.9rem);
+      font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; margin-bottom: 6px;
+    }
+    .hero-copy h1 span { color: var(--teal-lt); }
+    .hero-copy p { color: var(--muted); font-size: 0.88rem; max-width: 480px; }
+    .hero-stats { display: flex; gap: 24px; flex-wrap: wrap; }
+    .stat-pill { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .stat-num { font-family: var(--mono); font-size: 1.35rem; font-weight: 500; color: var(--teal-lt); line-height: 1; }
+    .stat-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+
+    /* ===== MAIN WRAP ===== */
+    .main { padding: 28px 0 60px; }
+    .wrap { max-width: 1380px; margin: 0 auto; padding: 0 24px; }
+
+    /* ===== STEP FLOW ===== */
+    .step-flow {
+      display: flex; align-items: center; gap: 6px; margin-bottom: 24px;
+      font-size: 0.75rem; font-family: var(--mono); color: var(--muted); flex-wrap: wrap;
+    }
+    .step-item { display: flex; align-items: center; gap: 6px; }
+    .step-dot {
+      width: 20px; height: 20px; border-radius: 50%; background: var(--surface2); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center; font-size: 0.68rem; font-weight: 700; flex-shrink: 0;
+      transition: all 0.3s;
+    }
+    .step-dot.active { background: var(--teal-glow); border-color: var(--teal-lt); color: var(--teal-lt); }
+    .step-dot.done { background: var(--teal); border-color: var(--teal); color: white; }
+    .step-sep { width: 16px; height: 1px; background: var(--border); }
+
+    /* ===== LAYOUT ===== */
+    .layout { display: grid; grid-template-columns: 42% 1fr; gap: 24px; align-items: start; }
+    @media (max-width: 1080px) { .layout { grid-template-columns: 1fr; } }
+
+    /* ===== UPLOAD SIDEBAR ===== */
+    .upload-sidebar { 
+      display: flex; 
+      flex-direction: column; 
+      gap: 18px; 
+      position: sticky;
+      top: 88px;
+      max-height: calc(100vh - 120px);
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+    @media (max-width: 1080px) { .upload-sidebar { position: static; max-height: none; } }
+
+    /* ===== PATIENT ACCORDION ===== */
+    .patient-accordion { margin-bottom: 18px; }
+    .accordion-header { cursor: pointer; transition: background 0.2s; border-radius: var(--radius); }
+    .accordion-header:hover { background: var(--surface2); }
+    .accordion-header .card-head { justify-content: space-between; }
+    .accordion-icon { font-size: 0.75rem; color: var(--muted); transition: transform 0.3s; }
+    .accordion-header[aria-expanded="true"] .accordion-icon { transform: rotate(180deg); }
+    .accordion-content {
+      display: none; padding-top: 18px; border-top: 1px solid var(--border);
+      margin-top: 12px; animation: slideDown 0.3s ease;
+    }
+    .accordion-content.show { display: block; }
+    @keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+
+    /* ===== LANDING DASHBOARD ===== */
+    .landing-dashboard { display: block; }
+    .landing-dashboard.hidden { display: none; }
+
+    .landing-hero {
+      background: linear-gradient(135deg, var(--teal-glow) 0%, rgba(20,184,166,0.05) 100%);
+      border: 1px solid rgba(20,184,166,0.2); border-radius: var(--radius);
+      padding: 28px; margin-bottom: 24px; text-align: center;
+    }
+    .landing-hero-content h2 {
+      font-size: 1.6rem; font-weight: 700; margin-bottom: 10px;
+      background: linear-gradient(135deg, var(--teal-lt) 0%, var(--teal) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .landing-hero-content p {
+      font-size: 0.92rem; color: var(--muted); max-width: 500px; margin: 0 auto; line-height: 1.6;
+    }
+
+    .landing-section { margin-bottom: 28px; }
+    .landing-section-title {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+    }
+    .section-icon { font-size: 1.4rem; }
+    .landing-section-title h3 {
+      font-size: 1.05rem; font-weight: 600; color: var(--text);
+    }
+
+    /* Workflow Steps */
+    .workflow-steps { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    @media (max-width: 600px) { .workflow-steps { grid-template-columns: 1fr; } }
+    .workflow-step {
+      display: flex; gap: 12px; background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 14px; align-items: start;
+    }
+    .step-number {
+      width: 28px; height: 28px; background: var(--teal-glow); border: 1px solid rgba(20,184,166,0.3);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.85rem; color: var(--teal-lt); flex-shrink: 0;
+    }
+    .step-content h4 { font-size: 0.88rem; font-weight: 600; margin-bottom: 4px; }
+    .step-content p { font-size: 0.78rem; color: var(--muted); line-height: 1.4; }
+
+    /* Tumor Classes Grid */
+    .tumor-classes-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    @media (max-width: 600px) { .tumor-classes-grid { grid-template-columns: 1fr; } }
+    .tumor-class-card {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 16px; text-align: center;
+    }
+    .tumor-icon { font-size: 1.8rem; margin-bottom: 8px; }
+    .tumor-class-card h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 6px; }
+    .tumor-class-card p { font-size: 0.75rem; color: var(--muted); line-height: 1.4; margin-bottom: 10px; }
+    .severity-badge {
+      display: inline-block; padding: 4px 10px; border-radius: 12px;
+      font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .severity-badge.high { background: rgba(220,38,38,0.15); color: #fca5a5; border: 1px solid rgba(220,38,38,0.3); }
+    .severity-badge.medium { background: rgba(217,119,6,0.15); color: #fcd34d; border: 1px solid rgba(217,119,6,0.3); }
+    .severity-badge.low { background: rgba(20,184,166,0.15); color: #99f6e4; border: 1px solid rgba(20,184,166,0.3); }
+
+    /* Features Grid */
+    .features-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    @media (max-width: 600px) { .features-grid { grid-template-columns: 1fr; } }
+    .feature-item {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 14px; display: flex; gap: 12px; align-items: start;
+    }
+    .feature-icon { font-size: 1.4rem; flex-shrink: 0; }
+    .feature-item h4 { font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; }
+    .feature-item p { font-size: 0.75rem; color: var(--muted); line-height: 1.4; }
+
+    /* XAI Card */
+    .xai-card {
+      background: linear-gradient(135deg, rgba(20,184,166,0.08) 0%, rgba(20,184,166,0.02) 100%);
+      border: 1px solid rgba(20,184,166,0.2); border-radius: var(--radius);
+      padding: 20px;
+    }
+    .xai-card p { font-size: 0.85rem; color: var(--text); line-height: 1.6; margin-bottom: 16px; }
+    .xai-benefits { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    @media (max-width: 600px) { .xai-benefits { grid-template-columns: 1fr; } }
+    .xai-benefit {
+      display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--muted);
+    }
+    .xai-benefit span:first-child {
+      color: var(--teal-lt); font-weight: 700; font-size: 0.9rem;
+    }
+
+    /* ===== RESULTS DASHBOARD ===== */
+    .results-dashboard { display: none; }
+    .results-dashboard.active { display: block; animation: fadeIn 0.4s ease; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    /* ===== CARD ===== */
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow);
+      margin-bottom: 18px; transition: box-shadow 0.3s;
+    }
+    .card:hover { box-shadow: var(--shadow), var(--shadow-glow); }
+    .card-head {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--border);
+    }
+    .card-icon {
+      width: 32px; height: 32px; background: var(--teal-glow); border: 1px solid rgba(20,184,166,0.25);
+      border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0;
+    }
+    .card-title { font-size: 0.92rem; font-weight: 600; letter-spacing: -0.01em; }
+
+    /* ===== UPLOAD ZONE ===== */
+    .upload-zone {
+      border: 2px dashed rgba(20,184,166,0.35); border-radius: var(--radius);
+      padding: 32px 20px; text-align: center; cursor: pointer;
+      transition: all 0.25s; background: var(--surface2); position: relative; user-select: none;
+    }
+    .upload-zone:hover, .upload-zone.drag-over {
+      border-color: var(--teal-lt); background: var(--teal-glow);
+    }
+    /* The file input is hidden but NOT overlaying the zone to prevent double-fire */
+    #fileInput { display: none; }
+    .upload-icon-wrap {
+      width: 52px; height: 52px; background: var(--teal-glow); border: 1px solid rgba(20,184,166,0.3);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; font-size: 22px;
+    }
+    .upload-title { font-size: 0.95rem; font-weight: 600; margin-bottom: 5px; }
+    .upload-sub { font-size: 0.79rem; color: var(--muted); }
+
+    /* Loading skeleton in upload area */
+    .upload-loading {
+      display: none; flex-direction: column; align-items: center; gap: 12px; padding: 20px;
+    }
+    .upload-loading.show { display: flex; }
+    .upload-spinner {
+      width: 32px; height: 32px; border: 3px solid var(--border);
+      border-top-color: var(--teal-lt); border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    .upload-loading-text { font-size: 0.82rem; color: var(--muted); font-family: var(--mono); }
+
+    /* Preview */
+    .img-preview-wrap { display: none; position: relative; margin-top: 14px; }
+    .img-preview-wrap img {
+      width: 100%; border-radius: var(--radius-sm); object-fit: cover; max-height: 230px; display: block;
+    }
+    .remove-img {
+      position: absolute; top: 8px; right: 8px; width: 26px; height: 26px;
+      background: rgba(0,0,0,0.65); border: none; border-radius: 50%; color: white;
+      cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s;
+    }
+    .remove-img:hover { background: var(--red-risk); }
+
+    /* File name badge */
+    .file-badge {
+      display: none; margin-top: 10px; padding: 7px 12px;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); font-size: 0.78rem; color: var(--muted);
+      font-family: var(--mono); align-items: center; gap: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .file-badge.show { display: flex; }
+
+    /* ===== PATIENT FORM ===== */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    .field label { font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+    .field input {
+      padding: 9px 12px; background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); color: var(--text); font-family: var(--sans);
+      font-size: 0.88rem; transition: border-color 0.2s;
+    }
+    .field input:focus { outline: none; border-color: var(--teal-lt); box-shadow: 0 0 0 3px var(--teal-glow); }
+    .field input::placeholder { color: var(--muted); }
+
+    /* ===== BUTTONS ===== */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 12px 22px; border: none; border-radius: var(--radius-sm); font-family: var(--sans);
+      font-size: 0.92rem; font-weight: 600; cursor: pointer; transition: all 0.2s; width: 100%; letter-spacing: -0.01em;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--teal), var(--teal-lt)); color: white;
+      box-shadow: 0 4px 16px rgba(20,184,166,0.35);
+    }
+    .btn-primary:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
+    .btn-primary:active:not(:disabled) { transform: translateY(0); }
+    .btn-secondary {
+      background: var(--surface2); color: var(--teal-lt); border: 1px solid rgba(20,184,166,0.3);
+    }
+    .btn-secondary:hover:not(:disabled) { background: var(--teal-glow); }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    /* ===== ERROR / NOTICE ===== */
+    .notice { display: none; padding: 11px 15px; border-radius: var(--radius-sm); font-size: 0.85rem; line-height: 1.5; margin: 10px 0; }
+    .notice.error { background: rgba(220,38,38,0.1); border: 1px solid rgba(220,38,38,0.3); color: #fca5a5; }
+    .notice.warn  { background: rgba(217,119,6,0.1); border: 1px solid rgba(217,119,6,0.35); color: #fcd34d; }
+    .notice.show  { display: flex; align-items: flex-start; gap: 8px; }
+
+    /* ===== RESULTS COLUMN ===== */
+    .results-col { display: none; }
+    .results-col.active { display: block; }
+
+    /* Empty state */
+    .empty-state {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      min-height: 400px; text-align: center; color: var(--muted); gap: 14px;
+    }
+    .empty-icon { font-size: 48px; opacity: 0.25; }
+    .empty-state h3 { font-size: 1rem; font-weight: 600; color: var(--text); opacity: 0.45; }
+
+    /* ===== DIAGNOSIS HERO CARD ===== */
+    .diag-card {
+      background: linear-gradient(135deg, var(--teal) 0%, #0d9488 50%, #0f766e 100%);
+      border-radius: var(--radius); padding: 26px; color: white; margin-bottom: 18px;
+      position: relative; overflow: hidden;
+    }
+    .diag-card.low-conf {
+      background: linear-gradient(135deg, #92400e 0%, #b45309 50%, #d97706 100%);
+    }
+    .diag-card::before {
+      content: ''; position: absolute; top: -28px; right: -28px;
+      width: 140px; height: 140px; background: rgba(255,255,255,0.06); border-radius: 50%;
+    }
+    .diag-card::after {
+      content: ''; position: absolute; bottom: -44px; left: -16px;
+      width: 200px; height: 200px; background: rgba(255,255,255,0.04); border-radius: 50%;
+    }
+    .diag-label {
+      font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em;
+      opacity: 0.8; margin-bottom: 6px; font-family: var(--mono);
+    }
+    .diag-prediction {
+      font-family: var(--serif); font-size: clamp(1.8rem, 3vw, 2.4rem); font-weight: 700;
+      line-height: 1.1; margin-bottom: 10px; position: relative; z-index: 1;
+    }
+    .diag-meta { display: flex; gap: 10px; flex-wrap: wrap; position: relative; z-index: 1; }
+    .diag-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: rgba(255,255,255,0.15); padding: 5px 12px; border-radius: 20px;
+      font-size: 0.82rem; font-weight: 600; backdrop-filter: blur(4px);
+    }
+    .diag-badge.warn-badge { background: rgba(255,255,255,0.2); }
+    .severity-chip { padding: 4px 11px; border-radius: 20px; font-size: 0.78rem; font-weight: 700; font-family: var(--mono); }
+    .sev-high   { background: rgba(220,38,38,0.2); color: #fca5a5; border: 1px solid rgba(220,38,38,0.4); }
+    .sev-medium { background: rgba(217,119,6,0.2); color: #fcd34d; border: 1px solid rgba(217,119,6,0.4); }
+    .sev-low    { background: rgba(5,150,105,0.2); color: #6ee7b7; border: 1px solid rgba(5,150,105,0.4); }
+    .sev-none   { background: rgba(20,184,166,0.2); color: #99f6e4; border: 1px solid rgba(20,184,166,0.4); }
+
+    /* Inference row below diag card */
+    .diag-extras {
+      display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 18px;
+    }
+    .diag-extra-tile {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+      padding: 12px 14px; text-align: center;
+    }
+    .diag-extra-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin-bottom: 4px; }
+    .diag-extra-val { font-family: var(--mono); font-size: 1rem; font-weight: 600; color: var(--teal-lt); }
+
+    /* Low confidence warning */
+    .low-conf-banner {
+      display: none; background: rgba(217,119,6,0.1); border: 1px solid rgba(217,119,6,0.4);
+      border-radius: var(--radius-sm); padding: 13px 16px; margin-bottom: 18px; gap: 12px; align-items: flex-start;
+    }
+    .low-conf-banner.show { display: flex; }
+    .low-conf-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+    .low-conf-body h4 { font-size: 0.88rem; font-weight: 700; color: #fbbf24; margin-bottom: 4px; }
+    .low-conf-body p { font-size: 0.8rem; color: var(--muted); line-height: 1.5; }
+
+    /* ===== TABS ===== */
+    .tabs-container { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 18px; overflow: hidden; }
+    .tabs-header { display: flex; border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; }
+    .tabs-header::-webkit-scrollbar { display: none; }
+    .tab-btn {
+      flex-shrink: 0; padding: 14px 18px; background: none; border: none; border-bottom: 2px solid transparent;
+      color: var(--muted); font-family: var(--sans); font-size: 0.84rem; font-weight: 500;
+      cursor: pointer; transition: all 0.2s; white-space: nowrap; display: flex; align-items: center; gap: 6px;
+    }
+    .tab-btn:hover { color: var(--text); background: var(--teal-glow); }
+    .tab-btn.active { color: var(--teal-lt); border-bottom-color: var(--teal-lt); background: var(--teal-glow); font-weight: 600; }
+    .tab-panel { display: none; padding: 22px; }
+    .tab-panel.active { display: block; animation: fadeSlide 0.25s ease; }
+    @keyframes fadeSlide { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+    /* ===== AI INSIGHTS (Tab 1) ===== */
+    .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    @media (max-width: 600px) { .metrics-grid { grid-template-columns: repeat(2,1fr); } }
+    .metric-tile {
+      background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+      padding: 14px; transition: border-color 0.2s;
+    }
+    .metric-tile:hover { border-color: rgba(20,184,166,0.3); }
+    .metric-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin-bottom: 6px; }
+    .metric-val { font-family: var(--mono); font-size: 1.1rem; font-weight: 600; color: var(--teal-lt); margin-bottom: 3px; }
+    .metric-sub { font-size: 0.72rem; color: var(--muted); }
+    .qdot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
+    .qdot.good { background: var(--green-safe); }
+    .qdot.poor { background: var(--red-risk); }
+
+    /* ===== PROB BARS (Tab 3) ===== */
+    .prob-list { display: flex; flex-direction: column; gap: 14px; }
+    .prob-top { display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 500; margin-bottom: 6px; }
+    .prob-track { height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+    .prob-fill { height: 100%; border-radius: 4px; transition: width 1.1s cubic-bezier(.25,.46,.45,.94); width: 0; }
+    .prob-fill.top { background: linear-gradient(90deg, var(--teal), var(--teal-lt)); }
+    .prob-fill.other { background: var(--surface2); border: 1px solid var(--border); }
+
+    /* ===== GRAD-CAM ===== */
+    .gradcam-strip { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-top: 14px; }
+    @media (max-width: 600px) { .gradcam-strip { grid-template-columns: 1fr; } }
+    .gradcam-frame {
+      border-radius: var(--radius-sm); overflow: hidden; cursor: pointer;
+      border: 1px solid var(--border); transition: all 0.25s; position: relative;
+    }
+    .gradcam-frame:hover { border-color: var(--teal-lt); transform: scale(1.02); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+    .gradcam-frame img { width: 100%; height: 160px; object-fit: cover; display: block; }
+    .gradcam-caption {
+      text-align: center; padding: 8px; font-size: 0.75rem; font-family: var(--mono);
+      color: var(--muted); background: var(--surface2); border-top: 1px solid var(--border);
+    }
+    .gradcam-zoom-hint {
+      position: absolute; top: 6px; right: 6px; background: rgba(0,0,0,0.55);
+      color: white; font-size: 11px; padding: 2px 6px; border-radius: 4px; opacity: 0;
+      transition: opacity 0.2s; pointer-events: none;
+    }
+    .gradcam-frame:hover .gradcam-zoom-hint { opacity: 1; }
+
+    /* Image Modal */
+    .img-modal {
+      display: none; position: fixed; inset: 0; z-index: 500;
+      background: rgba(0,0,0,0.88); align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .img-modal.show { display: flex; animation: fadeIn 0.2s ease; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .img-modal img { max-width: min(90vw, 700px); max-height: 85vh; object-fit: contain; border-radius: var(--radius); }
+    .img-modal-close {
+      position: absolute; top: 16px; right: 16px; width: 36px; height: 36px;
+      background: rgba(255,255,255,0.15); border: none; border-radius: 50%;
+      color: white; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s;
+    }
+    .img-modal-close:hover { background: rgba(255,255,255,0.3); }
+    .img-modal-caption { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); color: white; font-family: var(--mono); font-size: 0.82rem; opacity: 0.7; }
+
+    /* ===== AI SECOND OPINION ===== */
+    .opinion-card {
+      background: linear-gradient(135deg, var(--surface2) 0%, rgba(15,118,110,0.08) 100%);
+      border: 1px solid rgba(20,184,166,0.2); border-radius: var(--radius); padding: 22px;
+      margin-bottom: 18px;
+    }
+    .opinion-head { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+    .opinion-avatar {
+      width: 46px; height: 46px; background: var(--teal-glow); border: 1px solid rgba(20,184,166,0.3);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;
+    }
+    .opinion-head-text h3 { font-size: 1rem; font-weight: 700; margin-bottom: 2px; }
+    .opinion-head-text p { font-size: 0.78rem; color: var(--muted); }
+    .opinion-sections { display: flex; flex-direction: column; gap: 0; }
+    .op-section { padding: 13px 0; border-bottom: 1px solid var(--border); }
+    .op-section:last-child { border-bottom: none; padding-bottom: 0; }
+    .op-section-title { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--teal-lt); font-family: var(--mono); margin-bottom: 6px; }
+    .op-section-body { font-size: 0.87rem; color: var(--text); line-height: 1.6; }
+
+    /* ===== CLINICAL SUMMARY ===== */
+    .clinical-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+    @media (max-width: 600px) { .clinical-grid { grid-template-columns: 1fr; } }
+    .clin-block { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px; }
+    .clin-block-title { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--teal-lt); font-family: var(--mono); margin-bottom: 8px; }
+    .clin-block-body { font-size: 0.85rem; line-height: 1.6; color: var(--text); }
+    .clin-full { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px; }
+
+    /* ===== EXPORT REPORT (Tab 4) ===== */
+    .export-section p { font-size: 0.85rem; color: var(--muted); margin-bottom: 16px; line-height: 1.6; }
+    .export-checklist { list-style: none; margin-bottom: 20px; display: flex; flex-direction: column; gap: 7px; }
+    .export-checklist li { font-size: 0.84rem; color: var(--text); display: flex; align-items: center; gap: 8px; }
+    .export-checklist li::before { content: '✓'; color: var(--teal-lt); font-weight: 700; }
+
+    /* ===== LOADING VEIL ===== */
+    .loading-veil {
+      display: none; position: fixed; inset: 0; z-index: 300;
+      background: rgba(11,17,32,0.88); backdrop-filter: blur(6px);
+      align-items: center; justify-content: center; flex-direction: column; gap: 24px;
+    }
+    .loading-veil.active { display: flex; }
+    .loader-ring {
+      width: 56px; height: 56px; border: 4px solid rgba(20,184,166,0.2);
+      border-top-color: var(--teal-lt); border-radius: 50%;
+      animation: spin 0.85s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loader-steps { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+    .loader-step {
+      font-size: 0.87rem; font-family: var(--mono); color: var(--teal-lt);
+      opacity: 0; animation: fadeStep 0.5s forwards;
+    }
+    .loader-step:nth-child(1) { animation-delay: 0.1s; }
+    .loader-step:nth-child(2) { animation-delay: 0.7s; }
+    .loader-step:nth-child(3) { animation-delay: 1.3s; }
+    .loader-step:nth-child(4) { animation-delay: 2.0s; }
+    @keyframes fadeStep { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
+
+    /* Skeleton */
+    .skel {
+      background: linear-gradient(90deg, var(--surface2) 25%, var(--border) 50%, var(--surface2) 75%);
+      background-size: 200% 100%; animation: skel-anim 1.5s infinite; border-radius: 6px;
+    }
+    @keyframes skel-anim { 0% { background-position:200% 0; } 100% { background-position:-200% 0; } }
+
+    /* ===== DISCLAIMER ===== */
+    .disclaimer-block {
+      display: flex; gap: 12px; align-items: flex-start;
+      background: rgba(217,119,6,0.07); border: 1px solid rgba(217,119,6,0.25);
+      border-radius: var(--radius-sm); padding: 14px 16px;
+      font-size: 0.81rem; color: var(--muted); line-height: 1.55; margin-bottom: 18px;
+    }
+    .disclaimer-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+
+    /* ===== FOOTER ===== */
+    .footer { border-top: 1px solid var(--border); background: var(--surface); padding: 18px 0; }
+    .footer-inner {
+      max-width: 1380px; margin: 0 auto; padding: 0 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.79rem; color: var(--muted); gap: 14px; flex-wrap: wrap;
+    }
+
+    /* ===== FADE-IN ANIMATION ===== */
+    .fade-in { opacity: 0; transform: translateY(10px); transition: opacity 0.4s ease, transform 0.4s ease; }
+    .fade-in.visible { opacity: 1; transform: none; }
+
+    /* ===== ACCESSIBILITY ===== */
+    :focus-visible { outline: 2px solid var(--teal-lt); outline-offset: 3px; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 600px) {
+      .hero-inner { flex-direction: column; gap: 16px; }
+      .hero-stats { justify-content: flex-start; }
+      .form-grid { grid-template-columns: 1fr; }
+      .diag-extras { grid-template-columns: repeat(2,1fr); }
+      .tab-btn { padding: 12px 14px; font-size: 0.78rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="shell" style="display:grid; grid-template-rows:auto 1fr auto; min-height:100vh;">
+
+  <!-- TOPBAR -->
+  <nav class="topbar" role="banner">
+    <div class="topbar-inner">
+      <a href="#" class="brand" aria-label="NeuroAI home">
+        <div class="brand-mark">🧠</div>
+        <span class="brand-name">NeuroAI</span>
+        <span class="brand-tag">v2.1</span>
+      </a>
+      <div class="topbar-actions">
+        <button class="icon-btn" id="themeToggle" aria-label="Toggle theme" title="Toggle light/dark">🌙</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <div class="hero-strip">
+    <div class="hero-inner">
+      <div class="hero-copy">
+        <h1>Clinical MRI<br><span>Intelligence Platform</span></h1>
+        <p>Upload a brain MRI for AI tumor classification, Grad-CAM explainability, and a full clinical report — in under 10 seconds.</p>
+      </div>
+      <div class="hero-stats">
+        <div class="stat-pill"><span class="stat-num">97%</span><span class="stat-label">Accuracy</span></div>
+        <div class="stat-pill"><span class="stat-num">4</span><span class="stat-label">Classes</span></div>
+        <div class="stat-pill"><span class="stat-num">&lt;100ms</span><span class="stat-label">Inference</span></div>
+        <div class="stat-pill"><span class="stat-num">XAI</span><span class="stat-label">Explainable</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <main class="main" id="main">
+    <div class="wrap">
+
+      <!-- STEP FLOW -->
+      <div class="step-flow" id="stepFlow" aria-label="Workflow progress">
+        <div class="step-item"><div class="step-dot active" id="step1">1</div><span>Upload MRI</span></div>
+        <div class="step-sep"></div>
+        <div class="step-item"><div class="step-dot" id="step2">2</div><span>Quality Check</span></div>
+        <div class="step-sep"></div>
+        <div class="step-item"><div class="step-dot" id="step3">3</div><span>AI Analysis</span></div>
+        <div class="step-sep"></div>
+        <div class="step-item"><div class="step-dot" id="step4">4</div><span>Clinical Report</span></div>
+      </div>
+
+      <div class="layout">
+        <!-- LEFT: UPLOAD + PATIENT -->
+        <aside class="upload-sidebar">
+          <!-- Upload Card -->
+          <div class="card">
+            <div class="card-head">
+              <div class="card-icon">📤</div>
+              <span class="card-title">Upload MRI Scan</span>
+            </div>
+
+            <!-- Hidden file input: removed from overlay to prevent double-trigger -->
+            <input type="file" id="fileInput" accept="image/*" aria-label="Upload MRI image file" />
+
+            <!-- Drop zone — clicking it triggers fileInput programmatically -->
+            <div class="upload-zone" id="uploadZone" tabindex="0" role="button"
+                 aria-label="Drag and drop MRI scan or press Enter to browse files">
+              <div class="upload-icon-wrap">🔬</div>
+              <div class="upload-title">Drag &amp; drop MRI scan</div>
+              <div class="upload-sub">or click to browse &middot; JPG, PNG &middot; max 10 MB</div>
+            </div>
+
+            <!-- Upload loading indicator -->
+            <div class="upload-loading" id="uploadLoading">
+              <div class="upload-spinner"></div>
+              <div class="upload-loading-text">Loading preview…</div>
+            </div>
+
+            <!-- Preview -->
+            <div class="img-preview-wrap" id="imgPreview">
+              <img src="" alt="Uploaded MRI preview" id="previewImg" />
+              <button class="remove-img" id="removeBtn" aria-label="Remove uploaded image">✕</button>
+            </div>
+
+            <!-- File name badge -->
+            <div class="file-badge" id="fileBadge">
+              <span>📎</span><span id="fileNameText"></span>
+            </div>
+
+            <!-- Error notice -->
+            <div class="notice error" id="errorNotice" role="alert"></div>
+
+            <!-- Analyze button -->
+            <button class="btn btn-primary" id="analyzeBtn"
+                    style="display:none; margin-top:14px;" aria-label="Run AI analysis">
+              🔍 Analyze MRI Scan
+            </button>
+          </div>
+
+          <!-- Patient Info (Collapsible) -->
+          <div class="card patient-accordion">
+            <div class="accordion-header" id="patientAccordionHeader" tabindex="0" role="button" aria-expanded="false" aria-controls="patientAccordionContent">
+              <div class="card-head" style="margin-bottom:0; border-bottom:none;">
+                <div class="card-icon">🩺</div>
+                <span class="card-title">Patient Information (Optional)</span>
+                <span class="accordion-icon" id="accordionIcon">▼</span>
+              </div>
+            </div>
+            <div class="accordion-content" id="patientAccordionContent">
+              <div class="form-grid">
+                <div class="field">
+                  <label for="patName">Patient Name</label>
+                  <input type="text" id="patName" placeholder="Optional" autocomplete="off" />
+                </div>
+                <div class="field">
+                  <label for="patId">Patient ID</label>
+                  <input type="text" id="patId" placeholder="Optional" autocomplete="off" />
+                </div>
+                <div class="field">
+                  <label for="patAge">Age</label>
+                  <input type="number" id="patAge" placeholder="Optional" min="1" max="120" />
+                </div>
+                <div class="field">
+                  <label for="patGender">Gender</label>
+                  <input type="text" id="patGender" placeholder="Optional" />
+                </div>
+              </div>
+              <p style="font-size:0.75rem; color:var(--muted); margin-top:12px; line-height:1.5;">
+                ℹ️ Optional — used only in the PDF report. Nothing is stored.
+              </p>
+            </div>
+          </div>
+
+          <!-- Prediction Summary Card (hidden initially) -->
+          <div class="card" id="predictionSummary" style="display:none;">
+            <div class="card-head">
+              <div class="card-icon">📊</div>
+              <span class="card-title">Prediction Summary</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; background:var(--surface2); border-radius:8px;">
+                <span style="font-size:0.75rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em;">Tumor Type</span>
+                <span id="summaryTumor" style="font-weight:600; color:var(--teal-lt);">—</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; background:var(--surface2); border-radius:8px;">
+                <span style="font-size:0.75rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em;">Confidence</span>
+                <span id="summaryConf" style="font-weight:600; color:var(--teal-lt);">—</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; background:var(--surface2); border-radius:8px;">
+                <span style="font-size:0.75rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em;">Severity</span>
+                <span id="summarySeverity" style="font-weight:600; color:var(--teal-lt);">—</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; background:var(--surface2); border-radius:8px;">
+                <span style="font-size:0.75rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em;">Image Quality</span>
+                <span id="summaryQuality" style="font-weight:600; color:var(--teal-lt);">—</span>
+              </div>
+              <button class="btn btn-secondary" id="downloadReportBtn" style="margin-top:8px;">
+                📄 Download Report
+              </button>
+              <button class="btn btn-primary" id="analyzeAnotherBtn" style="margin-top:8px;">
+                🔄 Analyze Another Scan
+              </button>
+            </div>
+          </div>
+        </aside>
+
+        <!-- RIGHT: LANDING DASHBOARD (pre-upload) -->
+        <div class="landing-dashboard" id="landingDashboard">
+          <!-- Welcome Hero -->
+          <div class="landing-hero">
+            <div class="landing-hero-content">
+              <h2>🧠 AI-Powered Brain Tumor Diagnosis</h2>
+              <p>Upload an MRI scan to receive instant AI analysis with explainable insights, clinical recommendations, and comprehensive reporting.</p>
+            </div>
+          </div>
+
+          <!-- AI Workflow -->
+          <div class="landing-section">
+            <div class="landing-section-title">
+              <span class="section-icon">⚡</span>
+              <h3>AI Workflow</h3>
+            </div>
+            <div class="workflow-steps">
+              <div class="workflow-step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                  <h4>Upload MRI</h4>
+                  <p>Drag & drop or browse to upload your brain MRI scan</p>
+                </div>
+              </div>
+              <div class="workflow-step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                  <h4>Quality Check</h4>
+                  <p>Automatic validation of image quality, resolution, and clarity</p>
+                </div>
+              </div>
+              <div class="workflow-step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                  <h4>AI Analysis</h4>
+                  <p>Deep learning model classifies tumor type with confidence scores</p>
+                </div>
+              </div>
+              <div class="workflow-step">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                  <h4>Clinical Report</h4>
+                  <p>Generate comprehensive PDF report with AI second opinion</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Supported Classes -->
+          <div class="landing-section">
+            <div class="landing-section-title">
+              <span class="section-icon">🎯</span>
+              <h3>Supported Tumor Classes</h3>
+            </div>
+            <div class="tumor-classes-grid">
+              <div class="tumor-class-card">
+                <div class="tumor-icon">🔴</div>
+                <h4>Glioma</h4>
+                <p>Most common primary brain tumor originating from glial cells</p>
+                <span class="severity-badge high">High Severity</span>
+              </div>
+              <div class="tumor-class-card">
+                <div class="tumor-icon">🟡</div>
+                <h4>Meningioma</h4>
+                <p>Tumors in brain membranes, usually benign</p>
+                <span class="severity-badge medium">Moderate Severity</span>
+              </div>
+              <div class="tumor-class-card">
+                <div class="tumor-icon">✅</div>
+                <h4>No Tumor</h4>
+                <p>Healthy brain scan with no abnormalities detected</p>
+                <span class="severity-badge low">No Severity</span>
+              </div>
+              <div class="tumor-class-card">
+                <div class="tumor-icon">🟠</div>
+                <h4>Pituitary</h4>
+                <p>Pituitary gland tumors affecting hormone levels</p>
+                <span class="severity-badge medium">Moderate Severity</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Key Features -->
+          <div class="landing-section">
+            <div class="landing-section-title">
+              <span class="section-icon">✨</span>
+              <h3>Platform Features</h3>
+            </div>
+            <div class="features-grid">
+              <div class="feature-item">
+                <div class="feature-icon">🔥</div>
+                <h4>Grad-CAM Explainability</h4>
+                <p>Visual attention heatmaps showing which regions influenced the AI decision</p>
+              </div>
+              <div class="feature-item">
+                <div class="feature-icon">🩻</div>
+                <h4>AI Second Opinion</h4>
+                <p>Detailed radiologist-style analysis with reasoning and recommendations</p>
+              </div>
+              <div class="feature-item">
+                <div class="feature-icon">🛡️</div>
+                <h4>Responsible AI</h4>
+                <p>Low-confidence warnings and image quality validation</p>
+              </div>
+              <div class="feature-item">
+                <div class="feature-icon">📊</div>
+                <h4>AI Insights Panel</h4>
+                <p>Real-time metrics including inference time and quality scores</p>
+              </div>
+              <div class="feature-item">
+                <div class="feature-icon">📄</div>
+                <h4>PDF Reports</h4>
+                <p>Hospital-style downloadable medical reports</p>
+              </div>
+              <div class="feature-item">
+                <div class="feature-icon">🌙</div>
+                <h4>Dark Mode</h4>
+                <p>Accessibility-focused theme switching</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Explainable AI -->
+          <div class="landing-section">
+            <div class="landing-section-title">
+              <span class="section-icon">🧠</span>
+              <h3>Explainable AI</h3>
+            </div>
+            <div class="xai-card">
+              <p>NeuroAI uses Gradient-weighted Class Activation Mapping (Grad-CAM) to provide visual explanations of model predictions. This helps clinicians understand which regions the AI focused on, building trust and enabling verification of results.</p>
+              <div class="xai-benefits">
+                <div class="xai-benefit">
+                  <span>✓</span>
+                  <span>Transparent decision-making</span>
+                </div>
+                <div class="xai-benefit">
+                  <span>✓</span>
+                  <span>Visual attention mapping</span>
+                </div>
+                <div class="xai-benefit">
+                  <span>✓</span>
+                  <span>Clinician verification support</span>
+                </div>
+                <div class="xai-benefit">
+                  <span>✓</span>
+                  <span>Trust-building visualization</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: RESULTS (post-upload) -->
+        <div class="results-dashboard" id="resultsDashboard" style="display:none;">
+          <!-- Empty state -->
+          <div class="empty-state" id="emptyState">
+            <div class="empty-icon">🧠</div>
+            <h3>No analysis results yet</h3>
+            <p>Upload an MRI scan to begin AI analysis</p>
+          </div>
+
+          <!-- Low confidence banner -->
+          <div class="low-conf-banner" id="lowConfBanner">
+            <div class="low-conf-icon">⚠️</div>
+            <div class="low-conf-body">
+              <h4>⚠️ Low Confidence Prediction</h4>
+              <p>AI confidence is below threshold. Image quality, ambiguous features, or model uncertainty may be the cause. Consult a qualified radiologist for a definitive diagnosis. Do not use this result alone.</p>
+            </div>
+          </div>
+
+          <!-- Results -->
+          <div class="results-col" id="resultsCol">
+
+            <!-- Low confidence banner -->
+            <div class="low-conf-banner" id="lowConfBanner">
+              <div class="low-conf-icon">⚠️</div>
+              <div class="low-conf-body">
+                <h4>⚠️ Low Confidence Prediction</h4>
+                <p>AI confidence is below threshold. Image quality, ambiguous features, or model uncertainty may be the cause. Consult a qualified radiologist for a definitive diagnosis. Do not use this result alone.</p>
+              </div>
+            </div>
+
+            <!-- Diagnosis card -->
+            <div class="diag-card fade-in" id="diagCard">
+              <div class="diag-label">AI Primary Diagnosis</div>
+              <div class="diag-prediction" id="diagPrediction">—</div>
+              <div class="diag-meta">
+                <div class="diag-badge" id="diagConf">Confidence: —%</div>
+                <div class="diag-badge" id="diagTimestamp">—</div>
+                <span class="severity-chip" id="severityChip">—</span>
+              </div>
+            </div>
+
+            <!-- Quick metrics strip -->
+            <div class="diag-extras fade-in">
+              <div class="diag-extra-tile">
+                <div class="diag-extra-label">⏱ Inference</div>
+                <div class="diag-extra-val" id="mInference">—</div>
+              </div>
+              <div class="diag-extra-tile">
+                <div class="diag-extra-label">🖼 Quality</div>
+                <div class="diag-extra-val" id="mQuality">—</div>
+              </div>
+              <div class="diag-extra-tile">
+                <div class="diag-extra-label">🎯 Confidence</div>
+                <div class="diag-extra-val" id="mTopConf">—</div>
+              </div>
+            </div>
+
+            <!-- Grad-CAM -->
+            <div class="card fade-in" id="gradcamCard">
+              <div class="card-head">
+                <div class="card-icon">🔥</div>
+                <span class="card-title">Grad-CAM Explainability</span>
+              </div>
+              <p style="font-size:0.82rem; color:var(--muted); line-height:1.6;">
+                Gradient-weighted Class Activation Mapping highlights MRI regions the model attended most. Red = high attention. Click any image to enlarge.
+              </p>
+              <div class="gradcam-strip" id="gradcamStrip">
+                <div class="gradcam-frame" onclick="openModal('gcOriginal','Original MRI')">
+                  <img id="gcOriginal" src="" alt="Original MRI" />
+                  <div class="gradcam-zoom-hint">🔍 Enlarge</div>
+                  <div class="gradcam-caption">Original MRI</div>
+                </div>
+                <div class="gradcam-frame" onclick="openModal('gcHeatmap','Attention Heatmap')">
+                  <img id="gcHeatmap" src="" alt="Attention heatmap" />
+                  <div class="gradcam-zoom-hint">🔍 Enlarge</div>
+                  <div class="gradcam-caption">Heatmap</div>
+                </div>
+                <div class="gradcam-frame" onclick="openModal('gcOverlay','Grad-CAM Overlay')">
+                  <img id="gcOverlay" src="" alt="Overlay" />
+                  <div class="gradcam-zoom-hint">🔍 Enlarge</div>
+                  <div class="gradcam-caption">Overlay</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- AI Second Opinion -->
+            <div class="opinion-card fade-in" id="opinionCard">
+              <div class="opinion-head">
+                <div class="opinion-avatar">🩻</div>
+                <div class="opinion-head-text">
+                  <h3>AI Second Opinion</h3>
+                  <p>Radiologist-style AI analysis</p>
+                </div>
+              </div>
+              <div class="opinion-sections">
+                <div class="op-section">
+                  <div class="op-section-title">🧠 AI Reasoning</div>
+                  <div class="op-section-body" id="opReasoning">—</div>
+                </div>
+                <div class="op-section">
+                  <div class="op-section-title">⚠️ Severity Rationale</div>
+                  <div class="op-section-body" id="opSeverity">—</div>
+                </div>
+                <div class="op-section">
+                  <div class="op-section-title">🏥 Recommended Specialist</div>
+                  <div class="op-section-body" id="opSpecialist">—</div>
+                </div>
+                <div class="op-section">
+                  <div class="op-section-title">🧪 Recommended Tests</div>
+                  <div class="op-section-body" id="opTests">—</div>
+                </div>
+                <div class="op-section">
+                  <div class="op-section-title">📅 Follow-up Plan</div>
+                  <div class="op-section-body" id="opFollowup">—</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- TABBED INTERFACE -->
+            <div class="tabs-container fade-in" id="tabsContainer">
+              <div class="tabs-header" role="tablist" aria-label="Analysis details">
+                <button class="tab-btn active" role="tab" aria-selected="true"  data-tab="tab-insights"  aria-controls="tab-insights">📊 AI Insights</button>
+                <button class="tab-btn"        role="tab" aria-selected="false" data-tab="tab-clinical"  aria-controls="tab-clinical">📋 Clinical Summary</button>
+                <button class="tab-btn"        role="tab" aria-selected="false" data-tab="tab-probs"     aria-controls="tab-probs">📈 Probability Analysis</button>
+                <button class="tab-btn"        role="tab" aria-selected="false" data-tab="tab-export"    aria-controls="tab-export">📄 Export Report</button>
+              </div>
+
+              <!-- Tab 1: AI Insights -->
+              <div class="tab-panel active" id="tab-insights" role="tabpanel">
+                <div class="metrics-grid">
+                  <div class="metric-tile">
+                    <div class="metric-label">⏱ Inference Time</div>
+                    <div class="metric-val" id="tiInference">—</div>
+                    <div class="metric-sub">milliseconds</div>
+                  </div>
+                  <div class="metric-tile">
+                    <div class="metric-label">🖼 Image Quality</div>
+                    <div class="metric-val" id="tiQuality">—</div>
+                    <div class="metric-sub" id="tiQualitySub">—</div>
+                  </div>
+                  <div class="metric-tile">
+                    <div class="metric-label">🎯 Top Confidence</div>
+                    <div class="metric-val" id="tiTopConf">—</div>
+                    <div class="metric-sub">model certainty</div>
+                  </div>
+                  <div class="metric-tile">
+                    <div class="metric-label">📐 Resolution</div>
+                    <div class="metric-val" id="tiRes">—</div>
+                    <div class="metric-sub">image size</div>
+                  </div>
+                  <div class="metric-tile">
+                    <div class="metric-label">✨ Sharpness</div>
+                    <div class="metric-val" id="tiSharp">—</div>
+                    <div class="metric-sub">Laplacian variance</div>
+                  </div>
+                  <div class="metric-tile">
+                    <div class="metric-label">☀️ Brightness</div>
+                    <div class="metric-val" id="tiBright">—</div>
+                    <div class="metric-sub">mean pixel value</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tab 2: Clinical Summary -->
+              <div class="tab-panel" id="tab-clinical" role="tabpanel">
+                <div class="clinical-grid">
+                  <div class="clin-block">
+                    <div class="clin-block-title">💊 Possible Symptoms</div>
+                    <div class="clin-block-body" id="clinSymptoms">—</div>
+                  </div>
+                  <div class="clin-block">
+                    <div class="clin-block-title">➡️ Recommended Next Steps</div>
+                    <div class="clin-block-body" id="clinNextSteps">—</div>
+                  </div>
+                </div>
+                <div class="clin-full">
+                  <div class="clin-block-title">📖 Tumor Description</div>
+                  <div class="clin-block-body" id="clinDescription">—</div>
+                </div>
+              </div>
+
+              <!-- Tab 3: Probability Analysis -->
+              <div class="tab-panel" id="tab-probs" role="tabpanel">
+                <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px; line-height:1.6;">
+                  Class probability distribution from the softmax output. The top prediction is highlighted; bars animate on load.
+                </p>
+                <div class="prob-list" id="probList"></div>
+              </div>
+
+              <!-- Tab 4: Export Report -->
+              <div class="tab-panel" id="tab-export" role="tabpanel">
+                <div class="export-section">
+                  <p>Download a hospital-style PDF report including:</p>
+                  <ul class="export-checklist">
+                    <li>Patient information &amp; analysis metadata</li>
+                    <li>AI diagnosis with confidence &amp; severity</li>
+                    <li>Original MRI scan &amp; Grad-CAM overlay</li>
+                    <li>AI Second Opinion reasoning</li>
+                    <li>Clinical recommendations &amp; next steps</li>
+                    <li>Medical disclaimer</li>
+                  </ul>
+                  <button class="btn btn-primary" id="downloadBtn">
+                    ⬇️ Download PDF Report
+                  </button>
+                </div>
+              </div>
+
+            </div><!-- /tabs-container -->
+
+            <!-- Disclaimer -->
+            <div class="disclaimer-block">
+              <span class="disclaimer-icon">⚠️</span>
+              <span><strong>Medical Disclaimer:</strong> NeuroAI is for research and educational purposes only. AI predictions are <em>not</em> a substitute for professional medical advice, diagnosis, or treatment. Always consult a qualified healthcare professional before making clinical decisions.</span>
+            </div>
+
+          </div><!-- /results-col -->
+        </div><!-- /right -->
+      </div><!-- /layout -->
+    </div><!-- /wrap -->
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div>🧠 <strong>NeuroAI</strong> — Clinical MRI Intelligence Platform &nbsp;·&nbsp; © 2026</div>
+      <div style="max-width:500px; line-height:1.5;">AI-assisted medical imaging for research use only. Not a medical device. Not FDA cleared.</div>
+    </div>
+  </footer>
+
+</div><!-- /shell -->
+
+<!-- IMAGE MODAL -->
+<div class="img-modal" id="imgModal" role="dialog" aria-modal="true" aria-label="Enlarged image view">
+  <button class="img-modal-close" id="imgModalClose" aria-label="Close image">✕</button>
+  <img id="imgModalSrc" src="" alt="" />
+  <div class="img-modal-caption" id="imgModalCaption"></div>
+</div>
+
+<!-- LOADING VEIL -->
+<div class="loading-veil" id="loadingVeil" aria-live="assertive" aria-label="Analysing scan">
+  <div class="loader-ring"></div>
+  <div class="loader-steps">
+    <div class="loader-step">Validating image quality…</div>
+    <div class="loader-step">Preprocessing MRI…</div>
+    <div class="loader-step">Running deep learning inference…</div>
+    <div class="loader-step">Generating Grad-CAM &amp; report…</div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   CONFIG
+============================================================ */
+const API = window.location.origin + '/api';
+let currentData = null;      // last successful prediction result
+let isDark = true;
+// *** FIX: track selected File object directly, not via DOM ***
+let selectedFile = null;
+
+/* ============================================================
+   THEME
+============================================================ */
+const themeBtn = document.getElementById('themeToggle');
+function setTheme(dark) {
+  isDark = dark;
+  document.documentElement.setAttribute('data-theme', dark ? '' : 'light');
+  themeBtn.textContent = dark ? '🌙' : '☀️';
+  themeBtn.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
+  try { localStorage.setItem('neuroai-theme', dark ? 'dark' : 'light'); } catch(e) {}
+}
+themeBtn.addEventListener('click', () => setTheme(!isDark));
+try {
+  const saved = localStorage.getItem('neuroai-theme');
+  setTheme(saved !== 'light');
+} catch(e) { setTheme(true); }
+
+/* ============================================================
+   UPLOAD — ROOT-CAUSE FIX
+   ─────────────────────────────────────────────────────────
+   BUGS IN ORIGINAL:
+   1. The <input type="file"> was positioned absolute inset:0
+      with opacity:0, covering the whole upload zone. On click,
+      the zone's click handler fired AND the input's own click
+      fired → double dialog open on some browsers, consuming
+      the first selection silently.
+   2. `analyzeImage` checked `if (!previewImg.src)` but
+      previewImg.src is always the full page URL when unset
+      (not ""), so the guard never caught missing files.
+   3. No explicit File reference was kept — only the base64
+      DataURL stored in the img src. If the FileReader hadn't
+      finished (race condition), `previewImg.src` was stale.
+
+   FIX:
+   • Moved <input> outside the zone, display:none (no overlay).
+   • Zone click/keydown triggers fileInput.click() explicitly.
+   • Store the File object in `selectedFile`. analyzeImage reads
+     `selectedFile` directly and builds FormData from it — no
+     second fetch(previewImg.src) round-trip.
+   • fileInput.value = '' is called BEFORE programmatic click
+     so re-selecting the same file triggers `change` reliably.
+============================================================ */
+const uploadZone = document.getElementById('uploadZone');
+const fileInput  = document.getElementById('fileInput');
+const imgPreview = document.getElementById('imgPreview');
+const previewImg = document.getElementById('previewImg');
+const removeBtn  = document.getElementById('removeBtn');
+const analyzeBtn = document.getElementById('analyzeBtn');
+
+/* Click on zone → open file picker */
+uploadZone.addEventListener('click', () => {
+  fileInput.value = '';   // reset so same-file re-selection triggers 'change'
+  fileInput.click();
+});
+
+/* Keyboard accessibility */
+uploadZone.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    fileInput.value = '';
+    fileInput.click();
+  }
+});
+
+/* Drag & Drop */
+uploadZone.addEventListener('dragover', e => {
+  e.preventDefault();
+  uploadZone.classList.add('drag-over');
+});
+uploadZone.addEventListener('dragleave', e => {
+  // Only remove if leaving the zone itself, not a child
+  if (!uploadZone.contains(e.relatedTarget)) {
+    uploadZone.classList.remove('drag-over');
+  }
+});
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (f) processFile(f);
+});
+
+/* File input change */
+fileInput.addEventListener('change', e => {
+  const f = e.target.files[0];
+  if (f) processFile(f);
+});
+
+/* Remove image */
+removeBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  resetUpload();
+});
+
+function resetUpload() {
+  selectedFile = null;
+  fileInput.value = '';
+  previewImg.src = '';
+  imgPreview.style.display = 'none';
+  analyzeBtn.style.display = 'none';
+  uploadZone.style.display = '';
+  document.getElementById('fileBadge').classList.remove('show');
+  document.getElementById('uploadLoading').classList.remove('show');
+  hideError();
+  currentData = null;
+
+  // Reset dashboard states
+  document.getElementById('landingDashboard').classList.remove('hidden');
+  document.getElementById('resultsDashboard').classList.remove('active');
+  document.getElementById('resultsDashboard').style.display = 'none';
+  document.getElementById('resultsCol').classList.remove('active');
+
+  // Hide prediction summary card
+  document.getElementById('predictionSummary').style.display = 'none';
+
+  // Reset patient accordion
+  const patientAccordion = document.getElementById('patientAccordionContent');
+  const accordionHeader = document.getElementById('patientAccordionHeader');
+  const accordionIcon = document.getElementById('accordionIcon');
+  patientAccordion.classList.remove('show');
+  accordionHeader.setAttribute('aria-expanded', 'false');
+  accordionIcon.style.transform = 'rotate(0deg)';
+
+  setStep(1);
+}
+
+/* ============================================================
+   PATIENT ACCORDION
+============================================================ */
+function togglePatientAccordion() {
+  const content = document.getElementById('patientAccordionContent');
+  const header = document.getElementById('patientAccordionHeader');
+  const icon = document.getElementById('accordionIcon');
+  const isExpanded = header.getAttribute('aria-expanded') === 'true';
+
+  if (isExpanded) {
+    content.classList.remove('show');
+    header.setAttribute('aria-expanded', 'false');
+    icon.style.transform = 'rotate(0deg)';
+  } else {
+    content.classList.add('show');
+    header.setAttribute('aria-expanded', 'true');
+    icon.style.transform = 'rotate(180deg)';
+  }
+}
+
+// Patient accordion click handler
+document.getElementById('patientAccordionHeader').addEventListener('click', togglePatientAccordion);
+
+// Keyboard accessibility for accordion
+document.getElementById('patientAccordionHeader').addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    togglePatientAccordion();
+  }
+});
+
+/* *** processFile: validate → store File → show preview *** */
+function processFile(file) {
+  hideError();
+
+  if (!file.type.startsWith('image/')) {
+    showError('Please upload a valid image file (JPG or PNG).');
+    return;
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    showError('File size must be under 10 MB.');
+    return;
+  }
+
+  // *** Store the raw File reference ***
+  selectedFile = file;
+
+  // Show loading indicator while reading
+  uploadZone.style.display = 'none';
+  document.getElementById('uploadLoading').classList.add('show');
+
+  const reader = new FileReader();
+  reader.onload = ev => {
+    document.getElementById('uploadLoading').classList.remove('show');
+    previewImg.src = ev.target.result;
+    imgPreview.style.display = 'block';
+    analyzeBtn.style.display = 'flex';
+    // Show file name badge
+    const badge = document.getElementById('fileBadge');
+    document.getElementById('fileNameText').textContent = file.name + ' (' + (file.size / 1024).toFixed(0) + ' KB)';
+    badge.classList.add('show');
+    setStep(2);
+
+    // Auto-expand patient accordion after upload
+    const patientAccordion = document.getElementById('patientAccordionContent');
+    const accordionHeader = document.getElementById('patientAccordionHeader');
+    const accordionIcon = document.getElementById('accordionIcon');
+    patientAccordion.classList.add('show');
+    accordionHeader.setAttribute('aria-expanded', 'true');
+    accordionIcon.style.transform = 'rotate(180deg)';
+  };
+  reader.onerror = () => {
+    document.getElementById('uploadLoading').classList.remove('show');
+    uploadZone.style.display = '';
+    selectedFile = null;
+    showError('Failed to read file. Please try again.');
+  };
+  reader.readAsDataURL(file);
+}
+
+/* ============================================================
+   STEP INDICATOR
+============================================================ */
+function setStep(n) {
+  [1,2,3,4].forEach(i => {
+    const dot = document.getElementById('step' + i);
+    dot.className = 'step-dot' + (i < n ? ' done' : i === n ? ' active' : '');
+  });
+}
+
+/* ============================================================
+   ERRORS
+============================================================ */
+function showError(msg) {
+  const el = document.getElementById('errorNotice');
+  el.textContent = '⚠️  ' + msg;
+  el.classList.add('show');
+}
+function hideError() {
+  document.getElementById('errorNotice').classList.remove('show');
+}
+
+/* ============================================================
+   ANALYZE
+   FIX: Build FormData directly from selectedFile (the raw File
+   object). No fetch(previewImg.src) detour — avoids the async
+   race where the DataURL fetch could fail or return stale data.
+   Guard is now `if (!selectedFile)` which is always reliable.
+============================================================ */
+analyzeBtn.addEventListener('click', analyzeImage);
+
+async function analyzeImage() {
+  if (!selectedFile) {
+    showError('Upload an MRI scan first.');
+    return;
+  }
+
+  // Prevent double submission
+  analyzeBtn.disabled = true;
+  showLoading();
+  setStep(3);
+  hideError();
+
+  try {
+    const fd = new FormData();
+    // *** Use selectedFile directly — guaranteed to be the File object ***
+    fd.append('image', selectedFile, selectedFile.name || 'mri.jpg');
+
+    const res = await fetch(`${API}/predict`, { method: 'POST', body: fd });
+    const data = await res.json();
+
+    hideLoading();
+
+    if (!res.ok) {
+      if (data.error === 'Image quality check failed') {
+        showError(`Image Quality: ${data.quality_check?.reason || data.error} — ${data.quality_check?.details || ''}`);
+      } else {
+        showError(data.error || 'Analysis failed. Check server connection.');
+      }
+      setStep(2);
+      return;
+    }
+
+    currentData = data;
+    renderResults(data);
+    setStep(4);
+
+  } catch(err) {
+    hideLoading();
+    console.error('Network error:', err);
+    showError('Network error: ' + err.message + '. Is the Flask server running?');
+    setStep(2);
+  } finally {
+    analyzeBtn.disabled = false;
+  }
+}
+
+/* ============================================================
+   RENDER RESULTS
+============================================================ */
+function renderResults(d) {
+  // Switch from landing dashboard to results dashboard
+  document.getElementById('landingDashboard').classList.add('hidden');
+  document.getElementById('resultsDashboard').style.display = 'block';
+  document.getElementById('resultsDashboard').classList.add('active');
+
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('resultsCol').classList.add('active');
+
+  // Populate Prediction Summary card in sidebar
+  document.getElementById('predictionSummary').style.display = 'block';
+  document.getElementById('summaryTumor').textContent = d.prediction || '—';
+  document.getElementById('summaryConf').textContent = d.confidence ? d.confidence.toFixed(1) + '%' : '—';
+  const sev = (d.second_opinion?.severity) || d.tumor_info?.severity || '—';
+  document.getElementById('summarySeverity').textContent = sev;
+  const qok = d.quality_check?.suitable;
+  document.getElementById('summaryQuality').textContent = qok ? 'Good' : 'Poor';
+
+  /* Low confidence */
+  const banner = document.getElementById('lowConfBanner');
+  const diagCard = document.getElementById('diagCard');
+  const isLowConf = !!d.is_low_confidence;
+  banner.classList.toggle('show', isLowConf);
+  diagCard.classList.toggle('low-conf', isLowConf);
+
+  /* Diagnosis */
+  document.getElementById('diagPrediction').textContent = d.prediction;
+  document.getElementById('diagConf').textContent = isLowConf
+    ? '⚠ Low Confidence: ' + d.confidence.toFixed(1) + '%'
+    : 'Confidence: ' + d.confidence.toFixed(1) + '%';
+  const ts = new Date(d.timestamp);
+  document.getElementById('diagTimestamp').textContent =
+    ts.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  /* Severity */
+  const sevChip = document.getElementById('severityChip');
+  sevChip.textContent = 'Severity: ' + sev;
+  const sevMap = { 'High': 'sev-high', 'Low-Moderate': 'sev-medium', 'None': 'sev-none' };
+  sevChip.className = 'severity-chip ' + (sevMap[sev] || 'sev-low');
+
+  /* Quick strip */
+  document.getElementById('mInference').textContent = d.inference_time + ' ms';
+  document.getElementById('mTopConf').textContent   = d.confidence.toFixed(1) + '%';
+  document.getElementById('mQuality').innerHTML =
+    `<span class="qdot ${qok ? 'good' : 'poor'}"></span>${qok ? 'Good' : 'Poor'}`;
+
+  /* Tab 1: AI Insights detail */
+  const qm = d.quality_check?.metrics || {};
+  document.getElementById('tiInference').textContent = d.inference_time + ' ms';
+  document.getElementById('tiQuality').innerHTML =
+    `<span class="qdot ${qok ? 'good' : 'poor'}"></span>${qok ? 'Good' : 'Poor'}`;
+  document.getElementById('tiQualitySub').textContent = d.quality_check?.reason || '—';
+  document.getElementById('tiTopConf').textContent  = d.confidence.toFixed(1) + '%';
+  document.getElementById('tiRes').textContent      = qm.resolution  || '—';
+  document.getElementById('tiSharp').textContent    = qm.sharpness   ? qm.sharpness.toFixed(0) : '—';
+  document.getElementById('tiBright').textContent   = qm.brightness  ? qm.brightness.toFixed(0) : '—';
+
+  /* Tab 3: Probability bars */
+  const probList = document.getElementById('probList');
+  probList.innerHTML = '';
+  const sorted = Object.entries(d.all_predictions || {}).sort((a,b) => b[1]-a[1]);
+  sorted.forEach(([cls, pct]) => {
+    const isTop = cls === d.prediction;
+    const row = document.createElement('div');
+    row.className = 'prob-row';
+    row.innerHTML = `
+      <div class="prob-top">
+        <span style="font-weight:${isTop ? '700' : '400'}">${cls}</span>
+        <span style="font-family:var(--mono);color:var(--teal-lt)">${pct.toFixed(1)}%</span>
+      </div>
+      <div class="prob-track">
+        <div class="prob-fill ${isTop ? 'top' : 'other'}" data-width="${pct}" style="width:0"></div>
+      </div>`;
+    probList.appendChild(row);
+  });
+  // Animate bars after next paint
+  requestAnimationFrame(() => {
+    document.querySelectorAll('.prob-fill').forEach(el => {
+      el.style.width = el.dataset.width + '%';
+    });
+  });
+
+  /* Grad-CAM */
+  if (d.images) {
+    document.getElementById('gcOriginal').src = `data:image/png;base64,${d.images.original}`;
+    document.getElementById('gcHeatmap').src  = `data:image/png;base64,${d.images.heatmap}`;
+    document.getElementById('gcOverlay').src  = `data:image/png;base64,${d.images.overlay}`;
+  }
+
+  /* AI Second Opinion */
+  if (d.second_opinion) {
+    const op = d.second_opinion;
+    document.getElementById('opReasoning').textContent  = op.reasoning           || '—';
+    document.getElementById('opSeverity').textContent   = op.severity_rationale  || '—';
+    document.getElementById('opSpecialist').textContent = op.specialist           || '—';
+    document.getElementById('opTests').textContent      = op.recommended_tests   || '—';
+    document.getElementById('opFollowup').textContent   = op.follow_up           || '—';
+  }
+
+  /* Tab 2: Clinical summary */
+  if (d.tumor_info) {
+    document.getElementById('clinSymptoms').textContent    = d.tumor_info.symptoms    || '—';
+    document.getElementById('clinNextSteps').textContent   = d.tumor_info.next_steps  || '—';
+    document.getElementById('clinDescription').textContent = d.tumor_info.description || '—';
+  }
+
+  /* Staggered fade-in */
+  document.querySelectorAll('.fade-in').forEach((el, i) => {
+    el.classList.remove('visible');
+    setTimeout(() => el.classList.add('visible'), i * 80);
+  });
+
+  /* Scroll to results */
+  document.getElementById('resultsCol').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ============================================================
+   TABS
+============================================================ */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const target = btn.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(b => {
+      b.classList.remove('active');
+      b.setAttribute('aria-selected', 'false');
+    });
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    btn.setAttribute('aria-selected', 'true');
+    document.getElementById(target).classList.add('active');
+    // Re-animate probability bars when that tab is opened
+    if (target === 'tab-probs') {
+      requestAnimationFrame(() => {
+        document.querySelectorAll('.prob-fill').forEach(el => {
+          el.style.width = '0';
+          requestAnimationFrame(() => { el.style.width = el.dataset.width + '%'; });
+        });
+      });
+    }
+  });
+});
+
+/* ============================================================
+   GRAD-CAM IMAGE MODAL
+============================================================ */
+function openModal(imgId, caption) {
+  const src = document.getElementById(imgId).src;
+  if (!src) return;
+  document.getElementById('imgModalSrc').src = src;
+  document.getElementById('imgModalCaption').textContent = caption;
+  document.getElementById('imgModal').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+document.getElementById('imgModalClose').addEventListener('click', closeModal);
+document.getElementById('imgModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('imgModal')) closeModal();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+});
+
+function closeModal() {
+  document.getElementById('imgModal').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+/* ============================================================
+   DOWNLOAD PDF
+   FIX: guard prevents duplicate calls; button disables itself
+   during download to prevent double-click duplicate generation.
+============================================================ */
+document.getElementById('downloadBtn').addEventListener('click', async () => {
+  if (!currentData) { showError('Analyse a scan first.'); return; }
+
+  const btn = document.getElementById('downloadBtn');
+  if (btn.disabled) return;   // prevent duplicate clicks
+  btn.disabled = true;
+  btn.textContent = '⏳ Generating PDF…';
+
+  try {
+    const res = await fetch(`${API}/report`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        patient_name:   document.getElementById('patName').value   || 'Not Provided',
+        patient_id:     document.getElementById('patId').value     || 'Not Provided',
+        age:            document.getElementById('patAge').value    || 'Not Provided',
+        gender:         document.getElementById('patGender').value || 'Not Provided',
+        image:          currentData.images.original,
+        gradcam:        currentData.images.overlay,
+        prediction:     currentData.prediction,
+        confidence:     currentData.confidence,
+        timestamp:      currentData.timestamp,
+        second_opinion: currentData.second_opinion,
+        tumor_info:     currentData.tumor_info
+      })
+    });
+
+    if (!res.ok) throw new Error('Report generation failed');
+
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `neuroai_report_${new Date().toISOString().slice(0,10)}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+  } catch(err) {
+    showError('Failed to generate PDF. Check server connection.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '⬇️ Download PDF Report';
+  }
+});
+
+// Sidebar Download Report button
+document.getElementById('downloadReportBtn').addEventListener('click', async () => {
+  if (!currentData) { showError('Analyse a scan first.'); return; }
+  document.getElementById('downloadBtn').click();
+});
+
+// Sidebar Analyze Another button
+document.getElementById('analyzeAnotherBtn').addEventListener('click', () => {
+  resetUpload();
+});
+
+/* ============================================================
+   LOADING VEIL
+============================================================ */
+function showLoading() {
+  document.getElementById('loadingVeil').classList.add('active');
+}
+function hideLoading() {
+  document.getElementById('loadingVeil').classList.remove('active');
+}
+
+/* ============================================================
+   API HEALTH CHECK
+============================================================ */
+(async () => {
+  try {
+    const r = await fetch(`${API}/health`);
+    if (!r.ok) console.warn('NeuroAI API health check failed');
+  } catch(e) {
+    console.warn('Could not connect to API:', e.message);
+  }
+})();
+</script>
+</body>
+</html>
